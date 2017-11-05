@@ -1,6 +1,8 @@
 import React from 'react';
 
-import { View, Text, Image, Platform} from 'react-native';
+import { View, Text, Image, Platform, TouchableOpacity} from 'react-native';
+
+import Controller from './components/Controller';
 import Ship from './ship.svg'
 
 export default class App extends React.Component {
@@ -8,13 +10,15 @@ export default class App extends React.Component {
     super()
     this.state = {
       shipRotation: 36000,
-      shipRotationSpeed: 6,
-      shipSpeed: 6, 
+      shipRotationSpeed: 2,
+      shipSpeed: 4, 
       shipX: 50,
       shipY: 50,
-      keyMap: {}
+      up: false,
+      right: false,
+      left: false,
     }
-
+    this.keyMap = {}
     this.keys = {
       left: 37,
       right: 39,
@@ -23,53 +27,78 @@ export default class App extends React.Component {
 
     this.calcVector.bind(this)
     this.loop.bind(this)
-    this.moveLeftPress.bind(this)
+    this.setStateFromChild.bind(this)
   }
   
   componentWillMount() {
     if (Platform.OS == "web") {
-      console.log(2)
       document.addEventListener("keydown", this.handleKeyDown.bind(this))
       document.addEventListener("keyup", this.handleKeyUp.bind(this))
     }
     requestAnimationFrame(() => {this.loop()});
   }
 
-  loop() {
-    let {keyMap, shipRotation, shipRotationSpeed, shipSpeed, shipX, shipY} = this.state;
-    let newRotation, newX, newY;
-    if (keyMap[this.keys.up] && keyMap[this.keys.left]) {
-      let {shipX, shipY} = this.calcVector(shipSpeed, shipRotation)
-      newRotation = (shipRotation - shipRotationSpeed)
-      newX = shipX
-      newY = shipY
-    }
-    else if (keyMap[this.keys.up] && keyMap[this.keys.right]) {
-      let {shipX, shipY} = this.calcVector(shipSpeed, shipRotation)
-      newRotation = (shipRotation + shipRotationSpeed)
-      newX = shipX
-      newY = shipY
-    } else if (keyMap[this.keys.left]) {
-      newRotation = (shipRotation - shipRotationSpeed)
-      newX = shipX
-      newY = shipY
-    }
-    else if (keyMap[this.keys.right]) {
-      newRotation = (shipRotation + shipRotationSpeed)
-      newX = shipX
-      newY = shipY
-    }
-    else if (keyMap[this.keys.up]) {
-      let {shipX, shipY} = this.calcVector(shipSpeed, shipRotation)
-      newX = shipX
-      newY = shipY
-    }
+  setStateFromChild(state) {
+    this.setState(state)
+  }
 
-    if (keyMap[this.keys.right] || keyMap[this.keys.up] || keyMap[this.keys.left]) {
+  loop() {
+    console.log("u " + this.state.up)
+    console.log("l " + this.state.left)
+    console.log("r " + this.state.right)
+    let {shipRotation, shipRotationSpeed, shipSpeed, shipX, shipY}
+    = this.state;
+    let newRotation, newX, newY;
+    let up = this.keyMap[this.keys.up] || this.state.up
+    let left = this.keyMap[this.keys.left] || this.state.left
+    let right = this.keyMap[this.keys.right] || this.state.right
+
+    if (up && right) {
+      let {shipX, shipY} = this.calcVector(shipSpeed, shipRotation)
+      newRotation = (shipRotation + shipRotationSpeed)
+      newX = shipX
+      newY = shipY
       this.setState({
         shipRotation: newRotation || shipRotation,
         shipX: newX || shipX,
-        shipY: newY || shipY
+        shipY: newY || shipY,
+      })
+    }
+    else if (up && left) {
+      let {shipX, shipY} = this.calcVector(shipSpeed, shipRotation)
+      newRotation = (shipRotation - shipRotationSpeed)
+      newX = shipX
+      newY = shipY
+      this.setState({
+        shipRotation: newRotation || shipRotation,
+        shipX: newX || shipX,
+        shipY: newY || shipY,
+      })
+    }
+    else if (left) {
+      newRotation = (shipRotation - shipRotationSpeed)
+      this.setState({
+        shipRotation: newRotation || shipRotation,
+        shipX: newX || shipX,
+        shipY: newY || shipY,
+      })
+    }
+    else if (right) {
+      newRotation = (shipRotation + shipRotationSpeed)
+      this.setState({
+        shipRotation: newRotation || shipRotation,
+        shipX: newX || shipX,
+        shipY: newY || shipY,
+      })
+    }
+    else if (up) {
+      let {shipX, shipY} = this.calcVector(shipSpeed, shipRotation)
+      newX = shipX
+      newY = shipY
+      this.setState({
+        shipRotation: newRotation || shipRotation,
+        shipX: newX || shipX,
+        shipY: newY || shipY,
       })
     }
 
@@ -81,85 +110,26 @@ export default class App extends React.Component {
     let {shipX, shipY} = this.state;
     return {
         shipY: shipY - (speed * Math.cos(angle * Math.PI / 180)),
-        shipX: shipX + Math.floor((speed * Math.sin(angle * Math.PI / 180)))
+        shipX: shipX + ((speed * Math.sin(angle * Math.PI / 180)))
     }
   }
 
   handleKeyUp (event) {
-    var keyMap = {...this.state.keyMap}
-    keyMap[event.keyCode] = (event.type == 'keydown');//false
-    this.setState({keyMap})
+    this.keyMap[event.keyCode] = false
   }
 
   handleKeyDown (event) {
-    var keyMap = {...this.state.keyMap}
-    keyMap[event.keyCode] = (event.type == 'keydown'); //true
-    this.setState({keyMap})
+    this.keyMap[event.keyCode] = true
   };
-
-  moveLeftPress() {
-    var keyMap = {...this.state.keyMap}
-    keyMap[this.keys.left] = true
-    this.setState({keyMap})
-  }
-  
-  moveLeftRelease() {
-    var keyMap = {...this.state.keyMap}
-    keyMap[this.keys.left] = false
-    this.setState({keyMap})
-  }
-
-  moveRightPress() {
-    var keyMap = {...this.state.keyMap}
-    keyMap[this.keys.right] = true
-    this.setState({keyMap})
-  }
-  
-  moveRightRelease() {
-    var keyMap = {...this.state.keyMap}
-    keyMap[this.keys.right] = false
-    this.setState({keyMap})
-  }
-
-  moveUpPress() {
-    var keyMap = {...this.state.keyMap}
-    keyMap[this.keys.up] = true
-    this.setState({keyMap})
-  }
-  
-  moveUpRelease() {
-    var keyMap = {...this.state.keyMap}
-    keyMap[this.keys.up] = false
-    this.setState({keyMap})
-  }
-  
 
   render() {
     return(
-      <View style={{display:"flex", height:100, width:100}}>
+      <View style={{display:"flex", flex: 1, height:100, width:100}}>
+      <Controller
+        setParentState={(state) => this.setStateFromChild(state)}
+      />
       <View style={{display:"flex", flex:1, flexDirection:"row", alignSelf:"flex-start", alignItems:"center"}}>
-        <View
-          style={{flex:1, padding: 5, width: 50}}
-          onTouchStart={() => this.moveLeftPress()}
-          onTouchEnd={() => this.moveLeftRelease()}
-        >
-          <Text>Left</Text>
-        </View>
-        <View 
-        style={{flex:1, padding: 5, width: 50}}
-        onTouchStart={() => this.moveUpPress()}
-        onTouchEnd={() => this.moveUpRelease()}
-      >
-        <Text>Forward</Text>
-      </View>
-        <View 
-        style={{flex:1, padding: 5, width: 50}}
-        onTouchStart={() => this.moveRightPress()}
-        onTouchEnd={() => this.moveRightRelease()}
-      >
-        <Text>Right</Text>
-      </View>
-    </View>
+    
         <Image style={
           {
             width: 100,
@@ -170,7 +140,13 @@ export default class App extends React.Component {
             transform: [{ rotate: this.state.shipRotation + 'deg'}]}
           } 
         source={require('./spaceship.png')} />
+        
+      
+      
+      
       </View>
+    </View>
+      
     )
   }
 }

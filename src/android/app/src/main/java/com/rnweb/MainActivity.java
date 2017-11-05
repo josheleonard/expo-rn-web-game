@@ -1,6 +1,7 @@
 package com.rnweb;
 
 import com.facebook.react.ReactActivity;
+import com.facebook.react.ReactRootView;
 
 public class MainActivity extends ReactActivity {
 
@@ -12,4 +13,5 @@ public class MainActivity extends ReactActivity {
     protected String getMainComponentName() {
         return "RNWeb";
     }
+  }
 }
