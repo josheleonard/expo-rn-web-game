@@ -80,19 +80,20 @@ export default class Controller extends React.Component {
 
 
         // Calculate the transform property and set it as a value for our style which we add below to the Animated.View component
-        let imageStyle = { 
+        let controllerStyle = { 
             position: "absolute",
             top: 400,
             left: 50,
             transform: [{ translateX }, { translateY }, { scale }],
             backgroundColor: "red",
-            borderRadius: 50
+            borderRadius: 50,
+            zIndex: 3000 
         };
 
         return (
                 <Animated.View 
                     style={{
-                        ...imageStyle,
+                        ...controllerStyle,
                          margin: 20,
                          flex: 1,
                          borderRadius: 50,

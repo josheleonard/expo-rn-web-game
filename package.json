@@ -30,6 +30,7 @@
 		"react-tap-event-plugin": "^2.0.1",
 		"react-v-15.6": "^15.6.1",
 		"style-loader": "^0.18.2",
+		"styled-components": "^2.2.3",
 		"svgs": "^3.1.0",
 		"url-loader": "^0.5.9",
 		"webpack": "^3.8.1",

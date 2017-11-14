@@ -1,33 +1,32 @@
 import React from 'react';
-
-import { View, Text, Image, Platform, TouchableOpacity} from 'react-native';
-
+import { Platform } from 'react-native';
+import styled from 'styled-components/native';
 import Controller from './components/Controller';
-import Ship from './ship.svg'
+import Ship from './components/Ship';
+import UniverseSprite from './universe.jpg'
 
 export default class App extends React.Component {
   constructor() {
     super()
     this.state = {
       shipRotation: 36000,
-      shipRotationSpeed: 2,
-      shipSpeed: 4, 
+      shipRotationSpeed: 4,
+      shipSpeed: 6, 
       shipX: 50,
       shipY: 50,
       up: false,
       right: false,
       left: false,
     }
+    //track keyboard key presses outside
+    //of state because setState() triggers
+    // a render(), which we need to keep to a minimum
     this.keyMap = {}
     this.keys = {
       left: 37,
       right: 39,
       up: 38,
     }
-
-    this.calcVector.bind(this)
-    this.loop.bind(this)
-    this.setStateFromChild.bind(this)
   }
   
   componentWillMount() {
@@ -38,16 +37,25 @@ export default class App extends React.Component {
     requestAnimationFrame(() => {this.loop()});
   }
 
-  setStateFromChild(state) {
+  moveShip = (x, y, rotation) => {
+    this.setState({
+      shipRotation: rotation,
+      shipX: x,
+      shipY: y,
+    })
+  }
+
+  setStateFromChild = (state) => {
     this.setState(state)
   }
 
-  loop() {
-    console.log("u " + this.state.up)
-    console.log("l " + this.state.left)
-    console.log("r " + this.state.right)
-    let {shipRotation, shipRotationSpeed, shipSpeed, shipX, shipY}
-    = this.state;
+  loop = () => {
+    //check the keyboard and touch controller,
+    //then update the ship if needed
+    let {
+      shipRotation, shipRotationSpeed, 
+      shipSpeed, shipX, shipY
+    } = this.state;
     let newRotation, newX, newY;
     let up = this.keyMap[this.keys.up] || this.state.up
     let left = this.keyMap[this.keys.left] || this.state.left
@@ -58,95 +66,94 @@ export default class App extends React.Component {
       newRotation = (shipRotation + shipRotationSpeed)
       newX = shipX
       newY = shipY
-      this.setState({
-        shipRotation: newRotation || shipRotation,
-        shipX: newX || shipX,
-        shipY: newY || shipY,
-      })
+      this.moveShip((newX || shipX), (newY || shipY), (newRotation || shipRotation))
     }
     else if (up && left) {
       let {shipX, shipY} = this.calcVector(shipSpeed, shipRotation)
       newRotation = (shipRotation - shipRotationSpeed)
       newX = shipX
       newY = shipY
-      this.setState({
-        shipRotation: newRotation || shipRotation,
-        shipX: newX || shipX,
-        shipY: newY || shipY,
-      })
+      this.moveShip((newX || shipX), (newY || shipY), (newRotation || shipRotation))
     }
     else if (left) {
       newRotation = (shipRotation - shipRotationSpeed)
-      this.setState({
-        shipRotation: newRotation || shipRotation,
-        shipX: newX || shipX,
-        shipY: newY || shipY,
-      })
+      this.moveShip((newX || shipX), (newY || shipY), (newRotation || shipRotation))
     }
     else if (right) {
       newRotation = (shipRotation + shipRotationSpeed)
-      this.setState({
-        shipRotation: newRotation || shipRotation,
-        shipX: newX || shipX,
-        shipY: newY || shipY,
-      })
+      this.moveShip((newX || shipX), (newY || shipY), (newRotation || shipRotation))
     }
     else if (up) {
       let {shipX, shipY} = this.calcVector(shipSpeed, shipRotation)
       newX = shipX
       newY = shipY
-      this.setState({
-        shipRotation: newRotation || shipRotation,
-        shipX: newX || shipX,
-        shipY: newY || shipY,
-      })
+      this.moveShip((newX || shipX), (newY || shipY), (newRotation || shipRotation))
     }
-
-    requestAnimationFrame(() => {this.loop()});
-
+    //Loop every frame
+    requestAnimationFrame(() => {
+      this.loop()
+    });
   }
 
-  calcVector(speed, angle) {
+  calcVector = (speed, angle) => {
     let {shipX, shipY} = this.state;
     return {
         shipY: shipY - (speed * Math.cos(angle * Math.PI / 180)),
-        shipX: shipX + ((speed * Math.sin(angle * Math.PI / 180)))
+        shipX: shipX + (speed * Math.sin(angle * Math.PI / 180))
     }
   }
 
-  handleKeyUp (event) {
+  handleKeyUp = (event) => {
     this.keyMap[event.keyCode] = false
   }
 
-  handleKeyDown (event) {
+  handleKeyDown = (event) => {
     this.keyMap[event.keyCode] = true
   };
 
-  render() {
-    return(
-      <View style={{display:"flex", flex: 1, height:100, width:100}}>
-      <Controller
-        setParentState={(state) => this.setStateFromChild(state)}
-      />
-      <View style={{display:"flex", flex:1, flexDirection:"row", alignSelf:"flex-start", alignItems:"center"}}>
-    
-        <Image style={
-          {
-            width: 100,
-            height: 100,
-            position: "absolute",
-            top: this.state.shipY,
-            left: this.state.shipX,
-            transform: [{ rotate: this.state.shipRotation + 'deg'}]}
-          } 
-        source={require('./spaceship.png')} />
-        
-      
-      
-      
-      </View>
-    </View>
-      
+  render = () => {
+    return (
+      <AppWrapper>
+        <Controller
+          setParentState={
+            (state) => this.setStateFromChild(state)
+          }
+        />
+        <WorldBox>
+
+          <Ship 
+              y={this.state.shipY}
+              x={this.state.shipX}
+              rotation={this.state.shipRotation}/>
+
+          <Universe />
+        </WorldBox>
+    </AppWrapper>
     )
   }
 }
+
+//CSS
+const AppWrapper = styled.View`
+  display: flex;
+  flex: 1;
+  height: 100px;
+  width: 100px;
+`
+const WorldBox = styled.View`
+  display: flex;  
+  flex: 1;
+  flexDirection: row;
+  alignSelf: flex-start;
+  alignItems: center;
+  width: 800px;
+  height: 800px;
+  overflow: hidden;
+`
+const Universe = styled.Image`
+background-image: url(${UniverseSprite});
+width: 800px;
+height: 800px;
+zIndex: -3000;
+
+`

@@ -1,19 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
 import TheApp from './src/app';
-export default class App extends React.Component {
-  render() {
-    return (
-      <TheApp />
-    );
-  }
+//expo wants to use this file for mobile apps, 
+//so just import the main app
+//from the web app to use here
+export default function App() {
+  return <TheApp />
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
