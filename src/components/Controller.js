@@ -9,6 +9,10 @@ export default class Controller extends React.Component {
             pan: new Animated.ValueXY(),
             scale: new Animated.Value(1),
         };
+
+        this.pan = new Animated.ValueXY();
+        this.scale = new Animated.Value(1);
+
     }
 
     componentWillMount() {
@@ -18,10 +22,10 @@ export default class Controller extends React.Component {
 
             onPanResponderGrant: (e, gestureState) => {
                 // Set the initial value to the current state
-                this.state.pan.setOffset({ x: this.state.pan.x._value, y: this.state.pan.y._value });
-                this.state.pan.setValue({ x: 0, y: 0 });
+                this.pan.setOffset({ x: this.pan.x._value, y: this.pan.y._value });
+                this.pan.setValue({ x: 0, y: 0 });
                 Animated.spring(
-                    this.state.scale,
+                    this.scale,
                     { toValue: 1.1, friction: 3 }
                 ).start();
             },
@@ -29,24 +33,27 @@ export default class Controller extends React.Component {
             // When we drag/pan the object, set the delate to the states pan position
             onPanResponderMove: (e, gestureState) => {
                 
-                let {moveX, moveY} = gestureState
+                let {moveX, moveY, dx, dy} = gestureState
 
-                if(moveX < 200 
-                    && moveX > -200
-                    && moveY < 600 
-                    && moveY > -600) {
+                let { x, y, width, height } = this.props;
+                //contrain the movement to bounds        
+                if(    dx < width*2 
+                    && dx > -width*2 
+                    && dy < height*2 
+                    && dy > -height*2) {
+
                     let up, left, right = false;
-                    left = (moveX < 30)
-                    right = (moveX > 100)
-                    up  = (moveY < 400)
-                    this.props.setParentState({
+                    left = (dx < (-width/3))
+                    right = (dx > (width/3))
+                    up  = (dy < (-height/3))
+                    this.props.setKeys({
                         up,
                         left,
                         right
                     })
                     Animated.event([null, {
-                        dx: this.state.pan.x,
-                        dy: this.state.pan.y,
+                        dx: this.pan.x,
+                        dy: this.pan.y,
                     }])(e, gestureState);
                 } else {
                     return;
@@ -55,17 +62,17 @@ export default class Controller extends React.Component {
 
             onPanResponderRelease: (e, { vx, vy }) => {
                 // Flatten the offset to avoid erratic behavior
-                this.state.pan.flattenOffset();
-                this.props.setParentState({
+                this.pan.flattenOffset();
+                this.props.setKeys({
                     up: false,
                     left: false,
                     right: false
                 })
                 Animated.spring(
-                    this.state.scale,
+                    this.scale,
                     { toValue: 1, friction: 3 }
                 ).start();
-                this.state.pan.setValue({ x: 0, y: 0 });
+                this.pan.setValue({ x: 0, y: 0 });
                 
             }
         });
@@ -73,7 +80,9 @@ export default class Controller extends React.Component {
 
     render() {
         // Destructure the value of pan from the state
-        let { pan, scale } = this.state;
+        let pan = this.pan;
+        let scale = this.scale;
+        let { x, y, width, height } = this.props;
 
         // Calculate the x and y transform from the pan value
         let [translateX, translateY] = [pan.x, pan.y];
@@ -82,8 +91,8 @@ export default class Controller extends React.Component {
         // Calculate the transform property and set it as a value for our style which we add below to the Animated.View component
         let controllerStyle = { 
             position: "absolute",
-            top: 400,
-            left: 50,
+            top: y,
+            left: x,
             transform: [{ translateX }, { translateY }, { scale }],
             backgroundColor: "red",
             borderRadius: 50,
@@ -94,11 +103,10 @@ export default class Controller extends React.Component {
                 <Animated.View 
                     style={{
                         ...controllerStyle,
-                         margin: 20,
-                         flex: 1,
                          borderRadius: 50,
-                         width: 100,
-                         height: 100,
+                         width,
+                         height,
+                         zIndex: 5000,
                         }} 
                     {...this._panResponder.panHandlers} />
         );
