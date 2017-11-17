@@ -6,17 +6,20 @@ export default class Ship extends React.Component {
         let {
             rotation,
             x,
-            y
+            y,
+            width,
+            height
         } = this.props;
         return (
             <Animated.Image 
                 style={
                     {
-                        width: 100,
-                        height: 100,
+                        width,
+                        height,
+                        zIndex: 1000,
                         position: "absolute",
-                        top: y,
-                        left: x,
+                        top: y - (height/2),
+                        left: x - (width/2),
                         transform: [{rotate: rotation}],
                     }
                 }
