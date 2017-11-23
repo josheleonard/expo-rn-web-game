@@ -1,5 +1,8 @@
 import React from 'react';
 import { Platform, Dimensions, Animated } from 'react-native';
+import * as firebase from "firebase";
+
+//Components
 import styled from 'styled-components/native';
 import Controller from './components/Controller';
 import Ship from './components/Ship';
@@ -9,10 +12,50 @@ import StartScreen from './components/StartScreen';
 export default class App extends React.Component {
   constructor() {
     super()
-    //do not update thisobject unless you need a re-render
+
+    //check which OS (web, ios, android)
+    this.OS = Platform.OS
+    // Initialize Firebase
+    let config = {
+      apiKey: "AIzaSyCoNBpW8La0JLolHyY2RR1AkETbmgFaB38",
+      authDomain: "blackholesandbarrelrolls.firebaseapp.com",
+      databaseURL: "https://blackholesandbarrelrolls.firebaseio.com",
+      projectId: "blackholesandbarrelrolls",
+      storageBucket: "",
+      messagingSenderId: "802173219020"
+    };
+    firebase.initializeApp(config);
+
+    console.log("init")
+    //anonymous sign-in for now
+    firebase.auth().signInAnonymously().catch((error) => { console.error(error) });
+
+    /*If the signInAnonymously method completes without error, 
+    the observer registered in the onAuthStateChanged will trigger and you can get the 
+    anonymous user's account data from the User object:*/
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        // User is signed in.
+        let {isAnonymous, uid} = user;
+        console.log("logged in", {isAnonymous, uid})
+
+        // track new user in the database
+        this.newUserKey = uid
+        firebase.database().ref('users').child(uid).push({
+          x: 20,
+          y: 20,
+        })
+      } else {
+        // User is signed out.
+        console.log("signed out")
+      }
+    });
+    
+    //do not update this object unless you need a re-render
     this.state = {
       screen: "Start"
     }
+
     //constants
     this.shipRotationSpeed = 5;
     this.shipSpeed = 15;
@@ -34,11 +77,15 @@ export default class App extends React.Component {
     this.yBounds = [0, Dimensions.get('window').height];
     this.xCenter = this.xBounds[1]/2;
     this.yCenter = this.yBounds[1]/2;
+
+    //watch delta timestamp values to buffer high-end cpus from over-rendering
+    this.deltaTimeMs = 0;
+    this.lastFrameTimeMs = 0;
   }
   
   //This function is called when the component is first rendered
   componentDidMount() {
-    if (Platform.OS == "web") {
+    if (this.OS == "web") {
       document.addEventListener("keydown", (e) => this.handleKeyDown(e));
       document.addEventListener("keyup", (e) => this.handleKeyUp(e));
     }
@@ -66,8 +113,25 @@ export default class App extends React.Component {
   //Update's the world's (x,y) so it looks like the ship is moving
   //and also rotates the ship
   moveShip = (x, y, rotation) => {
-    this.worldXY.setValue({x, y})
-    this.shipRotation.setValue(rotation)
+    //update x y and rotation in firebase
+    firebase.database().ref('users/' + this.newUserKey).set({
+      x,
+      y,
+      rotation
+    });
+    /*Animated.parallel([
+      Animated.timing(// Animate value over time
+        this.worldXY,// The value to drive
+        {
+          toValue: {x, y},// Animate to x y value
+          duration: 14
+        }
+      ).start(),// Start the animation
+      Animated.timing(this.shipRotation,{toValue: rotation, duration: 14}).start(),
+    ])*/
+    this.shipRotation.setValue(rotation);
+    this.worldXY.setValue({x, y}) //still faster than using the Animated() animations
+    
   }
 
   //A callback sent to the controller component so that it can update the controls
@@ -83,10 +147,7 @@ export default class App extends React.Component {
     this.setState({screen});
   }
 
-  //Main Game Logic Loop
-  loop = () => {
-    //check the keyboard and touch controller,
-    //then move the ship if needed
+  shipControls = () => {
     switch(true) {
 
       case this.keyMap[this.keys.up] && this.keyMap[this.keys.right]: 
@@ -128,6 +189,24 @@ export default class App extends React.Component {
 
       default: break;
     } //done checking controls
+  }
+
+  //Main Game Logic Loop
+  loop = (timestamp) => {
+    if(this.OS === "web") {
+      //https://github.com/facebook/react-native/issues/16151
+      //can only throttle on web due to timestamp issue on native
+      //use delta time to throttle high-end cpus
+      //setinal buffer
+      this.deltaTimeMs += (timestamp - this.lastFrameTimeMs)
+      this.lastFrameTimeMs = timestamp;
+      while(this.deltaTimeMs >= 16) {
+        this.deltaTimeMs -= 16;
+      }
+    }
+    //check the keyboard and touch controller,
+    //then move the ship if needed
+    this.shipControls();
 
     requestAnimationFrame(this.loop); //Run loop code on every frame
   
@@ -138,8 +217,6 @@ export default class App extends React.Component {
   handleKeyDown = (event) => this.keyMap[event.keyCode] = true
 
   render = () => {
-    switch(this.state.screen) {
-      case "Game" :
         return <AppWrapper
           width={this.xBounds[1]}
           height={this.yBounds[1]}>
@@ -162,15 +239,8 @@ export default class App extends React.Component {
             y={this.yCenter}
             x={this.xCenter}
             rotation={this.interpolatedShipRotation}/>
-            
-          
 
         </AppWrapper>
-      
-      case "Start" : return <StartScreen startClicked={() => {this.setGameScreen("Game")}}/>
-
-      default: <View>Screen Not Found</View>
-    }
   }
 }
 

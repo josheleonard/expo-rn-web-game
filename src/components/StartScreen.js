@@ -9,7 +9,13 @@ StartScreen = ({startClicked}) =>
             margin: 40
         }}    
     >
-        <TouchableHighlight onPress={startClicked}><Text>Start</Text></TouchableHighlight>
+           <TouchableHighlight onPress={() => {
+                    console.log("clicked");
+                    startClicked()
+                }
+            }>
+                <Text>Start</Text>
+            </TouchableHighlight>
     </View>
 
 export default StartScreen

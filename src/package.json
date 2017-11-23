@@ -3,9 +3,9 @@
 	"version": "0.0.1",
 	"private": true,
 	"scripts": {
-		"start": "node node_modules/react-native/local-cli/cli.js start",
-		"test": "jest",
-		"web": "webpack-dev-server -d --config ./webpack.config.js --inline --hot --colors --open",
+		"start": "node ./node_modules/react-native/local-cli/cli.js start",
+		"test": "node ./node_modules/.bin jest",
+		"web": "node ./node_modules/webpack-dev-server -d --config ./webpack.config.js --inline --hot --colors --open",
 		"android": "exp build:android"
 	},
 	"dependencies": {

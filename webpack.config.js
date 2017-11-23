@@ -7,6 +7,7 @@ module.exports = {
     'webpack/hot/only-dev-server',
     './index.web.js'
   ],
+  devtool: "cheap-source-map",
   module: {
     loaders: [
       {
@@ -17,6 +18,11 @@ module.exports = {
           cacheDirectory: true,
           presets: ['react-native']
         }
+      },
+      {
+        test: /\.js$/,
+        use: ["source-map-loader"],
+        enforce: "pre"
       },
       {
         test: /\.css$/,
