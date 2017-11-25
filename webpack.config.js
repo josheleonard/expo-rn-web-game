@@ -7,7 +7,7 @@ module.exports = {
     'webpack/hot/only-dev-server',
     './index.web.js'
   ],
-  devtool: "cheap-source-map",
+  devtool: "eval-source-map",
   module: {
     loaders: [
       {
@@ -15,14 +15,11 @@ module.exports = {
         exclude: /node_modules/,
         loader: 'babel-loader',
         options: {
+          sourceMaps: true,
+          retainLines: true,
           cacheDirectory: true,
           presets: ['react-native']
         }
-      },
-      {
-        test: /\.js$/,
-        use: ["source-map-loader"],
-        enforce: "pre"
       },
       {
         test: /\.css$/,
@@ -53,6 +50,6 @@ module.exports = {
     filename: 'bundle.js'
   },
   devServer: {
-    contentBase: './web/dist'
+    contentBase: __dirname + '/web/dist'
   }
 };

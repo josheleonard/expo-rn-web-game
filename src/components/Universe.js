@@ -2,11 +2,23 @@ import React from 'react';
 import { Image, View, Animated } from 'react-native'; 
 
 export default class Universe extends React.Component{
+  shouldComponentUpdate(nextProps, nextState) {
+        let { x, y, children } = this.props;
+        if( x !== nextProps.x || y !== nextProps.y || children !== nextProps.children) {
+            if(children !== nextProps.children) {
+              console.log("filthy damn kids!!!, you're killing my render time!!")
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
   render() {
+    console.log("universe render")
     let {x, y, children, style} = this.props;
     const resizeMode = 'cover';
     return (
-      <View
+      <Animated.View
         style={{
           flex: 1,
           position: "relative",
@@ -17,6 +29,7 @@ export default class Universe extends React.Component{
           zIndex: 0,
         }}
       >
+      
         <Animated.View
           style={{
             position: 'absolute',
@@ -34,6 +47,7 @@ export default class Universe extends React.Component{
             ]
           }}
         >
+        
           <Image
             style={{
               display: 'flex',
@@ -42,10 +56,12 @@ export default class Universe extends React.Component{
               zIndex: 0,
               resizeMode,
             }}
-            source={require('./universe.jpg')}
-          />
+            source={require('./universe.jpg')}>
+            {children}
+          </Image>
         </Animated.View>
-      </View>
+        
+      </Animated.View>
     );
   }
 }

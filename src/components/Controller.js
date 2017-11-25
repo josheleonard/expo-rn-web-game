@@ -10,9 +10,6 @@ export default class Controller extends React.Component {
             scale: new Animated.Value(1),
         };
 
-        this.pan = new Animated.ValueXY();
-        this.scale = new Animated.Value(1);
-
     }
 
     componentWillMount() {
@@ -21,18 +18,19 @@ export default class Controller extends React.Component {
             onMoveShouldSetPanResponderCapture: () => true,
 
             onPanResponderGrant: (e, gestureState) => {
+                console.log("controler grabbed")
                 // Set the initial value to the current state
-                this.pan.setOffset({ x: this.pan.x._value, y: this.pan.y._value });
-                this.pan.setValue({ x: 0, y: 0 });
+                this.state.pan.setOffset({ x: this.state.pan.x._value, y: this.state.pan.y._value });
+                this.state.pan.setValue({ x: 0, y: 0 });
                 Animated.spring(
-                    this.scale,
+                    this.state.scale,
                     { toValue: 1.1, friction: 3 }
                 ).start();
             },
 
             // When we drag/pan the object, set the delate to the states pan position
             onPanResponderMove: (e, gestureState) => {
-                
+                console.log("tracking controler movement")
                 let {moveX, moveY, dx, dy} = gestureState
 
                 let { x, y, width, height } = this.props;
@@ -52,8 +50,8 @@ export default class Controller extends React.Component {
                         right
                     })
                     Animated.event([null, {
-                        dx: this.pan.x,
-                        dy: this.pan.y,
+                        dx: this.state.pan.x,
+                        dy: this.state.pan.y,
                     }])(e, gestureState);
                 } else {
                     return;
@@ -61,27 +59,29 @@ export default class Controller extends React.Component {
             },
 
             onPanResponderRelease: (e, { vx, vy }) => {
+                console.log("controls dropped")
                 // Flatten the offset to avoid erratic behavior
-                this.pan.flattenOffset();
+                this.state.pan.flattenOffset();
                 this.props.setKeys({
                     up: false,
                     left: false,
                     right: false
                 })
                 Animated.spring(
-                    this.scale,
+                    this.state.scale,
                     { toValue: 1, friction: 3 }
                 ).start();
-                this.pan.setValue({ x: 0, y: 0 });
+                this.state.pan.setValue({ x: 0, y: 0 });
                 
             }
         });
     }
 
     render() {
+        console.log("Controller rendered")
         // Destructure the value of pan from the state
-        let pan = this.pan;
-        let scale = this.scale;
+        let pan = this.state.pan;
+        let scale = this.state.scale;
         let { x, y, width, height } = this.props;
 
         // Calculate the x and y transform from the pan value
@@ -90,24 +90,24 @@ export default class Controller extends React.Component {
 
         // Calculate the transform property and set it as a value for our style which we add below to the Animated.View component
         let controllerStyle = { 
-            position: "absolute",
-            top: y,
-            left: x,
-            transform: [{ translateX }, { translateY }, { scale }],
-            backgroundColor: "red",
-            borderRadius: 50,
-            zIndex: 3000 
+            
         };
 
         return (
                 <Animated.View 
                     style={{
-                        ...controllerStyle,
-                         borderRadius: 50,
-                         width,
-                         height,
-                         zIndex: 5000,
-                        }} 
+                        position: "absolute",
+                        top: y,
+                        left: x,
+                        transform: [{ translateX }, { translateY }, { scale }],
+                        backgroundColor: "red",
+                        borderRadius: 50,
+                        zIndex: 3000,
+                        borderRadius: 50,
+                        width,
+                        height,
+                        zIndex: 5000,
+                    }} 
                     {...this._panResponder.panHandlers} />
         );
     }
