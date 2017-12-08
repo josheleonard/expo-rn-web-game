@@ -1,7 +1,17 @@
 import React from 'react'
-import { Image, View, PanResponder, StyleSheet, Animated} from 'react-native'
+import { Image, View, PanResponder, StyleSheet, Animated, Platform} from 'react-native'
+import {connect} from 'react-redux';
+import { bindActionCreators } from 'redux';
+import ReactAnimationFrame from 'react-animation-frame';
 
-export default class Controller extends React.Component {
+//Redux Actions Imports
+import * as controllerActions from '../actions/controller.actions';
+
+//CONSTANTS
+let KEY_MAP = { LEFT: 37, RIGHT: 39, UP: 38,} //which keys to track
+let {LEFT, RIGHT, UP} = KEY_MAP;
+
+export class Controller extends React.Component {
     constructor(props) {
         super(props);
 
@@ -9,7 +19,7 @@ export default class Controller extends React.Component {
             pan: new Animated.ValueXY(),
             scale: new Animated.Value(1),
         };
-
+        this.keys = {} //track which keys are up or down
     }
 
     componentWillMount() {
@@ -18,7 +28,6 @@ export default class Controller extends React.Component {
             onMoveShouldSetPanResponderCapture: () => true,
 
             onPanResponderGrant: (e, gestureState) => {
-                console.log("controler grabbed")
                 // Set the initial value to the current state
                 this.state.pan.setOffset({ x: this.state.pan.x._value, y: this.state.pan.y._value });
                 this.state.pan.setValue({ x: 0, y: 0 });
@@ -30,7 +39,6 @@ export default class Controller extends React.Component {
 
             // When we drag/pan the object, set the delate to the states pan position
             onPanResponderMove: (e, gestureState) => {
-                console.log("tracking controler movement")
                 let {moveX, moveY, dx, dy} = gestureState
 
                 let { x, y, width, height } = this.props;
@@ -41,32 +49,34 @@ export default class Controller extends React.Component {
                     && dy > -height*2) {
 
                     let up, left, right = false;
+
                     left = (dx < (-width/3))
                     right = (dx > (width/3))
                     up  = (dy < (-height/3))
-                    this.props.setKeys({
-                        up,
-                        left,
-                        right
-                    })
+
+                    //this.props.setKeys({ up, left, right })
+                    
+                    this.keys[UP] = up;
+                    this.keys[LEFT] = left;
+                    this.keys[RIGHT] = right;
+
                     Animated.event([null, {
                         dx: this.state.pan.x,
                         dy: this.state.pan.y,
                     }])(e, gestureState);
+
                 } else {
                     return;
                 }
             },
 
             onPanResponderRelease: (e, { vx, vy }) => {
-                console.log("controls dropped")
                 // Flatten the offset to avoid erratic behavior
                 this.state.pan.flattenOffset();
-                this.props.setKeys({
-                    up: false,
-                    left: false,
-                    right: false
-                })
+                //this.props.setKeys({ up: false, left: false, right: false })
+                this.keys[UP] = false;
+                this.keys[LEFT] = false;
+                this.keys[RIGHT] = false;
                 Animated.spring(
                     this.state.scale,
                     { toValue: 1, friction: 3 }
@@ -77,21 +87,35 @@ export default class Controller extends React.Component {
         });
     }
 
+    componentDidMount() {
+        if (Platform.OS === "web") {
+          document.addEventListener("keydown", (e) => this.handleKeyDown(e));
+          document.addEventListener("keyup", (e) => this.handleKeyUp(e));
+        }
+    }
+
+    onAnimationFrame() {
+        //update game logic using the controller input
+        this.props.keyDown(this.keys);
+    }
+
+    //Takes keyboard events and updates controls
+    handleKeyUp = (event) => {
+        this.keys[event.keyCode] = false;
+    }
+    handleKeyDown = (event) => {
+        this.keys[event.keyCode] = true;
+    }
+
     render() {
-        console.log("Controller rendered")
+
         // Destructure the value of pan from the state
         let pan = this.state.pan;
         let scale = this.state.scale;
-        let { x, y, width, height } = this.props;
+        let { x, y, width, height, keyUp, keyDown } = this.props;
 
         // Calculate the x and y transform from the pan value
         let [translateX, translateY] = [pan.x, pan.y];
-
-
-        // Calculate the transform property and set it as a value for our style which we add below to the Animated.View component
-        let controllerStyle = { 
-            
-        };
 
         return (
                 <Animated.View 
@@ -99,6 +123,7 @@ export default class Controller extends React.Component {
                         position: "absolute",
                         top: y,
                         left: x,
+                        // Calculate the transform property and set it as a value for our style
                         transform: [{ translateX }, { translateY }, { scale }],
                         backgroundColor: "red",
                         borderRadius: 50,
@@ -108,7 +133,8 @@ export default class Controller extends React.Component {
                         height,
                         zIndex: 5000,
                     }} 
-                    {...this._panResponder.panHandlers} />
+                    {...this._panResponder.panHandlers} 
+                />
         );
     }
 
@@ -122,3 +148,8 @@ let styles = StyleSheet.create({
         height: 100,
     }
 });
+
+const mapStateToProps = null;
+const mapDispatchToProps = (dispatch) => bindActionCreators(controllerActions, dispatch);
+
+export default connect(mapStateToProps, mapDispatchToProps)(ReactAnimationFrame(Controller));

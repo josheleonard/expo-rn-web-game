@@ -1,8 +1,12 @@
 import React from 'react';
-import { Image, View, Animated } from 'react-native'; 
+import { Image, View, Animated } from 'react-native';
 
-export default class Universe extends React.Component{
-  shouldComponentUpdate(nextProps, nextState) {
+import {connect} from 'react-redux';
+
+import {universeXSelector, universeYSelector} from '../selectors/universe.selectors';
+
+export class Universe extends React.Component{
+  /*shouldComponentUpdate(nextProps, nextState) {
         let { x, y, children } = this.props;
         if( x !== nextProps.x || y !== nextProps.y || children !== nextProps.children) {
             if(children !== nextProps.children) {
@@ -12,9 +16,8 @@ export default class Universe extends React.Component{
         } else {
             return false;
         }
-    }
+    }*/
   render() {
-    console.log("universe render")
     let {x, y, children, style} = this.props;
     const resizeMode = 'cover';
     return (
@@ -65,3 +68,10 @@ export default class Universe extends React.Component{
     );
   }
 }
+
+const mapStateToProps = state => ({
+    x: state.universe.worldX,//universeXSelector(state),
+    y: state.universe.worldY,//universeYSelector(state),
+})
+
+export default connect(mapStateToProps, null)(Universe)
